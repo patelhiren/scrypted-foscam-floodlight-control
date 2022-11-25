@@ -11,15 +11,20 @@ const { deviceManager } = sdk;
 const FLOODLIGHT_IP_KEY: string = "floodlight-ip"
 const FLOODLIGHT_USER_KEY: string = "floodlight-username"
 const FLOODLIGHT_PASSWORD_KEY: string = "floodlight-password"
+
+type whiteLightBrightnessData = [result: number, enable? :number, brightness?: number, lightinterval?: number];
+type hdrModeData = [result: number, mode?: number];
+
 class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnOff, Brightness {
 
     lightinterval: number = 60
+    isHdrEnabled: boolean = false
 
     constructor(nativeId?: string) {
         super(nativeId);
         this.updateState()
     }
-    
+
     async getSettings(): Promise<Setting[]> {
         return [
             {
@@ -76,17 +81,39 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
             return;
         }
 
+        const brightnessData = await this.getWhiteLightState();
+        if (brightnessData && brightnessData[0] === 0) {
+            this.brightness = brightnessData[2]
+            this.lightinterval = brightnessData[3]
+
+            this.on = (brightnessData[1] === 1);
+        } else {
+            this.on = this.on || false;
+        }
+
+        const hdrData = await this.getHdrMode();
+        if(hdrData && hdrData[0] === 0) {
+            this.isHdrEnabled = (hdrData[1] === 1);
+        }
+        else {
+            this.isHdrEnabled = false;
+        }
+
+    }
+
+    async getWhiteLightState(): Promise<whiteLightBrightnessData> {
+
         const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=getWhiteLightBrightness&usr=${this.userName}&pwd=${this.password}`;
         const responseXml = await axios.get(cmdUrl, {
             responseType: 'text'
         }).then(response => {
             return response.data;
         }).catch(err => {
-            console.log(`IP: ${this.ipAddress} getWhiteLightBrightness: \n${err}`);
+            console.log(`getWhiteLightState: Error for ip: ${this.ipAddress} error: \n${err}`);
         });
 
         if (responseXml != null) {
-            this.console.log(`IP: ${this.ipAddress} getWhiteLightBrightness: \n${responseXml}`);
+            this.console.log(`getWhiteLightState: ip: ${this.ipAddress} data: \n${responseXml}`);
             const doc = new dom().parseFromString(responseXml);
             const resultCode = parseInt(xpath.select('//CGI_Result/result[1]/text()', doc).toString(), 10);
             if (resultCode == 0) {
@@ -94,20 +121,16 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                 const brightness = parseInt(xpath.select('//CGI_Result/brightness[1]/text()', doc).valueOf().toString());
                 const lightinterval = parseInt(xpath.select('//CGI_Result/lightinterval[1]/text()', doc).valueOf().toString());
 
-                this.brightness = brightness
-                this.lightinterval = lightinterval
-
-                this.on = (enable === 1)
-                return;
+                return [resultCode, enable, brightness, lightinterval];
             }
+            return [resultCode, null, null, null]
         }
 
-        this.on = this.on || false;
-
+        return null;
     }
 
-    async setWhiteLightState(enable: boolean): Promise<boolean>  {
-        const commandMode = enable ? 1: 0
+    async setWhiteLightState(enable: boolean): Promise<boolean> {
+        const commandMode = enable ? 1 : 0
 
         const setWhiteLightBrightnessUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=setWhiteLightBrightness&enable=${commandMode}&brightness=${this.brightness}&lightinterval=${this.lightinterval}&usr=${this.userName}&pwd=${this.password}`;
 
@@ -116,11 +139,70 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
         }).then(response => {
             return response.data;
         }).catch(err => {
-            console.log(`setWhiteLightState: Error for IP: ${this.ipAddress} error: \n${err}`);
+            console.log(`setWhiteLightState: Error for ip: ${this.ipAddress} error: \n${err}`);
         });
 
         if (responseXml != null) {
-            this.console.log(`IP: ${this.ipAddress} setWhiteLightBrightness: \n${responseXml}`);
+            this.console.log(`setWhiteLightState: ip: ${this.ipAddress} data: \n${responseXml}`);
+            const doc = new dom().parseFromString(responseXml);
+            const resultCode = parseInt(xpath.select('//CGI_Result/result[1]/text()', doc).toString(), 10);
+            if (resultCode == 0) {
+                // Work around a bug in the current Foscam Floodlight firmware where if the night mode toggles
+                // it looses hdr effect even though the option returns true, unless we call the setHdrMode again.
+                // Foscam support indicated they will pass on this bug to their R&D team, but I am not sure
+                // when or if a fix will be available.
+                if (this.isHdrEnabled) {
+                    await this.setHdrMode(true);
+                }
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
+    async getHdrMode(): Promise<hdrModeData> {
+
+        const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=getHdrMode&usr=${this.userName}&pwd=${this.password}`;
+        const responseXml = await axios.get(cmdUrl, {
+            responseType: 'text'
+        }).then(response => {
+            return response.data;
+        }).catch(err => {
+            console.log(`getHdrMode: Error for ip: ${this.ipAddress} error: \n${err}`);
+        });
+
+        if (responseXml != null) {
+            this.console.log(`getHdrMode: ip: ${this.ipAddress} data: \n${responseXml}`);
+            const doc = new dom().parseFromString(responseXml);
+            const resultCode = parseInt(xpath.select('//CGI_Result/result[1]/text()', doc).toString(), 10);
+            if (resultCode == 0) {
+                const mode = parseInt(xpath.select('//CGI_Result/mode[1]/text()', doc).valueOf().toString(), 10);
+                
+                return [resultCode, mode];
+            }
+            return [resultCode, null]
+        }
+
+        return null;
+    }
+
+    async setHdrMode(enable: boolean): Promise<boolean> {
+        const commandMode = enable ? 1 : 0
+
+        const setHdrModeUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=setHdrMode&mode=${commandMode}}&usr=${this.userName}&pwd=${this.password}`;
+
+        const responseXml = await axios.get(setHdrModeUrl, {
+            responseType: 'text'
+        }).then(response => {
+            return response.data;
+        }).catch(err => {
+            console.log(`setHdrMode: Error for ip: ${this.ipAddress} error: \n${err}`);
+        });
+
+        if (responseXml != null) {
+            this.console.log(`setHdrMode: ip: ${this.ipAddress} data: \n${responseXml}`);
             const doc = new dom().parseFromString(responseXml);
             const resultCode = parseInt(xpath.select('//CGI_Result/result[1]/text()', doc).toString(), 10);
             if (resultCode == 0) {
@@ -129,7 +211,6 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
         }
 
         return false;
-
     }
 
     async turnOff() {
