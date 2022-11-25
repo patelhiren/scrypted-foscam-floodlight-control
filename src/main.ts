@@ -109,14 +109,14 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
     async setWhiteLightState(enable: boolean): Promise<boolean>  {
         const commandMode = enable ? 1: 0
 
-        const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=setWhiteLightBrightness&enable=${commandMode}&brightness=${this.brightness}&lightinterval=${this.lightinterval}&usr=${this.userName}&pwd=${this.password}`;
+        const setWhiteLightBrightnessUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=setWhiteLightBrightness&enable=${commandMode}&brightness=${this.brightness}&lightinterval=${this.lightinterval}&usr=${this.userName}&pwd=${this.password}`;
 
-        const responseXml = await axios.get(cmdUrl, {
+        const responseXml = await axios.get(setWhiteLightBrightnessUrl, {
             responseType: 'text'
         }).then(response => {
             return response.data;
         }).catch(err => {
-            console.log(`IP: ${this.ipAddress} setWhiteLightBrightness: \n${err}`);
+            console.log(`setWhiteLightState: Error for IP: ${this.ipAddress} error: \n${err}`);
         });
 
         if (responseXml != null) {
@@ -133,7 +133,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
     }
 
     async turnOff() {
-        this.console.log('turnOff was called!');
+        this.console.log('turnOff: sending whiteLight turn off request.');
         if (await this.setWhiteLightState(false)) {
             this.on = false
         }
@@ -141,14 +141,14 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
 
     async turnOn() {
         // set a breakpoint here.
-        this.console.log('turnOn was called!');
+        this.console.log('turnOn: sending whiteLight turn on request.');
         if (await this.setWhiteLightState(true)) {
             this.on = true
         }
     }
 
     async setBrightness(brightness: number): Promise<void> {
-        this.console.log(`Set brightness called: brightness = ${brightness}`);
+        this.console.log(`setBrightness: setting brightness to ${brightness}`);
         this.brightness = brightness
         this.setWhiteLightState(brightness > 0 ? true : false)
     }
