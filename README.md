@@ -7,7 +7,7 @@ Tested with [Foscam 2K 4MP Outdoor Floodlight Security Camera](https://www.fosca
 * System Firmware: 1.17.2.9
 * Application Firmware: 2.134.2.34
 
-To setup
+## Setup
 
 * Install the **foscam-floodlight-control** plugin
 * **Add Device** from the plugin page.
