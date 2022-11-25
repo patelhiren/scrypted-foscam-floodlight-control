@@ -1,48 +1,52 @@
 {
-   "name": "@patehiren/foscam-floodlight-plugin",
-   "description": "Scrypted Foscam Floodlight Control plugin. Turn the floodlight on/off and set the floodlight brightness as desired.",
-   "author": "Hiren Patel",
-   "license": "Apache",
-   "homepage": "https://github.com/patelhiren/scrypted-foscam-floodlight-control",
-   "repository": {
-      "type": "git",
-      "url": "https://github.com/patelhiren/scrypted-foscam-floodlight-control.git"
-   },
-   "scripts": {
-      "postinstall": "scrypted-setup-project",
-      "build": "scrypted-webpack",
-      "prepublishOnly": "NODE_ENV=production scrypted-webpack",
-      "prescrypted-vscode-launch": "scrypted-webpack",
-      "scrypted-vscode-launch": "scrypted-deploy-debug",
-      "scrypted-deploy-debug": "scrypted-deploy-debug",
-      "scrypted-debug": "scrypted-debug",
-      "scrypted-deploy": "scrypted-deploy",
-      "scrypted-readme": "scrypted-readme",
-      "scrypted-package-json": "scrypted-package-json"
-   },
-   "scrypted": {
-      "name": "Foscam Floodlight Plugin",
-      "type": "DeviceProvider",
-      "interfaces": [
-         "DeviceProvider",
-         "DeviceCreator"
-      ]
-   },
-   "keywords": [
-      "scrypted",
-      "plugin",
-      "Foscam",
-      "Floodlight",
-      "light"
-   ],
-   "dependencies": {
-      "@types/node": "^16.6.1",
-      "axios": "^0.24.0",
-      "xmldom-ts": "0.3.1",
-      "xpath-ts": "1.3.13"
-   },
-   "devDependencies": {
-      "@scrypted/sdk": "^0.1.13"
-   },
-   "version": "0.0.1"
+  "name": "@patelhiren/foscam-floodlight-plugin",
+  "description": "Scrypted Foscam Floodlight Control plugin. Turn the floodlight on/off and set the floodlight brightness as desired.",
+  "author": "Hiren Patel",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/patelhiren/scrypted-foscam-floodlight-control",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patelhiren/scrypted-foscam-floodlight-control.git"
+  },
+  "scripts": {
+    "postinstall": "scrypted-setup-project",
+    "build": "scrypted-webpack",
+    "prepublishOnly": "NODE_ENV=production scrypted-webpack",
+    "prescrypted-vscode-launch": "scrypted-webpack",
+    "scrypted-vscode-launch": "scrypted-deploy-debug",
+    "scrypted-deploy-debug": "scrypted-deploy-debug",
+    "scrypted-debug": "scrypted-debug",
+    "scrypted-deploy": "scrypted-deploy",
+    "scrypted-readme": "scrypted-readme",
+    "scrypted-package-json": "scrypted-package-json"
+  },
+  "scrypted": {
+    "name": "Foscam Floodlight Plugin",
+    "type": "DeviceProvider",
+    "interfaces": [
+      "DeviceProvider",
+      "DeviceCreator"
+    ]
+  },
+  "keywords": [
+    "scrypted",
+    "plugin",
+    "Foscam",
+    "Floodlight",
+    "light"
+  ],
+  "dependencies": {
+    "@types/node": "^16.6.1",
+    "axios": "^0.24.0",
+    "xmldom-ts": "0.3.1",
+    "xpath-ts": "1.3.13"
+  },
+  "devDependencies": {
+    "@scrypted/sdk": "^0.1.13"
+  },
+  "version": "0.0.1",
+  "bugs": {
+    "url": "https://github.com/patelhiren/scrypted-foscam-floodlight-control/issues"
+  },
+  "main": "index.js"
 }
