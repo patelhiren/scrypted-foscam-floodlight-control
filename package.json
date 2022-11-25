@@ -6,7 +6,7 @@
    "homepage": "https://github.com/patelhiren/scrypted-foscam-floodlight-control",
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/patelhiren/scrypted-foscam-floodlight-control.git"
+      "url": "https://github.com/patelhiren/scrypted-foscam-floodlight-control.git"
    },
    "scripts": {
       "postinstall": "scrypted-setup-project",
