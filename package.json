@@ -3,6 +3,11 @@
    "description": "Scrypted Foscam Floodlight Control plugin. Turn the floodlight on/off and set the floodlight brightness as desired.",
    "author": "Hiren Patel",
    "license": "Apache",
+   "homepage": "https://github.com/patelhiren/scrypted-foscam-floodlight-control",
+   "repository": {
+      "type": "git",
+      "url": "git+https://github.com/patelhiren/scrypted-foscam-floodlight-control.git"
+   },
    "scripts": {
       "postinstall": "scrypted-setup-project",
       "build": "scrypted-webpack",
@@ -16,7 +21,7 @@
       "scrypted-package-json": "scrypted-package-json"
    },
    "scrypted": {
-      "name": "Foscam Floodlight Control Provider",
+      "name": "Foscam Floodlight Plugin",
       "type": "DeviceProvider",
       "interfaces": [
          "DeviceProvider",
