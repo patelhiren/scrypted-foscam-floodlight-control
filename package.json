@@ -44,9 +44,5 @@
    "devDependencies": {
       "@scrypted/sdk": "^0.1.13"
    },
-   "publishConfig": {
-      "access": "public",
-      "registry": "https://registry.npmjs.org/"
-   },
    "version": "0.0.1"
 }
