@@ -152,6 +152,8 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                 // Foscam support indicated they will pass on this bug to their R&D team, but I am not sure
                 // when or if a fix will be available.
                 if (this.isHdrEnabled) {
+                    // Give time for the IR LEDs to catch up.
+                    await new Promise(f => setTimeout(f, 3000));
                     await this.setHdrMode(true);
                 }
                 return true;
