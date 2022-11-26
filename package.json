@@ -1,6 +1,6 @@
 {
   "name": "@patelhiren/foscam-floodlight-plugin",
-  "description": "Scrypted Foscam Floodlight Control plugin. Turn the floodlight on/off and set the floodlight brightness as desired.",
+  "description": "Scrypted Foscam Floodlight plugin. Turn the floodlight on/off and set the floodlight brightness as desired.",
   "author": "Hiren Patel",
   "license": "Apache-2.0",
   "homepage": "https://github.com/patelhiren/scrypted-foscam-floodlight-control",
