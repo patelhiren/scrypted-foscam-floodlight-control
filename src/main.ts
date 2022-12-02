@@ -1,6 +1,5 @@
 import sdk, { DeviceProvider, DeviceCreator, Setting, DeviceCreatorSettings, Settings, SettingValue, OnOff, ScryptedDeviceBase, ScryptedDeviceType, ScryptedInterface, Brightness } from '@scrypted/sdk';
 import axios from 'axios';
-import { Console } from 'console';
 import { randomBytes } from "crypto";
 import { DOMParserImpl as dom } from 'xmldom-ts';
 import * as xpath from 'xpath-ts';
@@ -14,11 +13,12 @@ const FLOODLIGHT_PASSWORD_KEY: string = "floodlight-password"
 
 type whiteLightBrightnessData = [result: number, enable? :number, brightness?: number, lightinterval?: number];
 type hdrModeData = [result: number, mode?: number];
+type devStateData = [result: number, infraLedState?: number];
 
 class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnOff, Brightness {
 
     lightinterval: number = 60
-    isHdrEnabled: boolean = false
+    infraLedState: number = -1
 
     constructor(nativeId?: string) {
         super(nativeId);
@@ -91,14 +91,33 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
             this.on = this.on || false;
         }
 
-        const hdrData = await this.getHdrMode();
-        if(hdrData && hdrData[0] === 0) {
-            this.isHdrEnabled = (hdrData[1] === 1);
-        }
-        else {
-            this.isHdrEnabled = false;
-        }
+        this.pollDeviceState();
 
+    }
+
+    async pollDeviceState() {
+        do {
+            await new Promise(f => setTimeout(f, 2000));
+            const devState = await this.getDevState();
+            var infraLedStateChanged = false;
+            if (devState && devState[0] === 0) {
+                if (this.infraLedState != devState[1]) {
+                    infraLedStateChanged = true;
+                    this.infraLedState = devState[1];
+                }
+                // Work around a bug in the current Foscam Floodlight firmware where if the night mode toggles
+                // it looses hdr effect even though the option returns true, unless we call the setHdrMode again.
+                // Foscam support indicated they will pass on this bug to their R&D team, but I am not sure
+                // when or if a fix will be available.
+                if (infraLedStateChanged) {
+                    const hdrData = await this.getHdrMode();
+                    if(hdrData && hdrData[0] === 0 && hdrData[1] === 1) {
+                        await new Promise(f => setTimeout(f, 2000));
+                        await this.setHdrMode(true);
+                    }
+                }
+            }
+        } while(true);
     }
 
     async getWhiteLightState(): Promise<whiteLightBrightnessData> {
@@ -144,20 +163,6 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
 
         if (responseXml != null) {
             this.console.log(`setWhiteLightState: ip: ${this.ipAddress} data: \n${responseXml}`);
-            const doc = new dom().parseFromString(responseXml);
-            const resultCode = parseInt(xpath.select('//CGI_Result/result[1]/text()', doc).toString(), 10);
-            if (resultCode == 0) {
-                // Work around a bug in the current Foscam Floodlight firmware where if the night mode toggles
-                // it looses hdr effect even though the option returns true, unless we call the setHdrMode again.
-                // Foscam support indicated they will pass on this bug to their R&D team, but I am not sure
-                // when or if a fix will be available.
-                if (this.isHdrEnabled) {
-                    // Give time for the IR LEDs to catch up.
-                    await new Promise(f => setTimeout(f, 3000));
-                    await this.setHdrMode(true);
-                }
-                return true;
-            }
         }
 
         return false;
@@ -213,6 +218,32 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
         }
 
         return false;
+    }
+
+    async getDevState(): Promise<devStateData> {
+
+        const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=getDevState&usr=${this.userName}&pwd=${this.password}`;
+        const responseXml = await axios.get(cmdUrl, {
+            responseType: 'text'
+        }).then(response => {
+            return response.data;
+        }).catch(err => {
+            console.log(`getDevState: Error for ip: ${this.ipAddress} error: \n${err}`);
+        });
+
+        if (responseXml != null) {
+            // this.console.log(`getDevState: ip: ${this.ipAddress} data: \n${responseXml}`);
+            const doc = new dom().parseFromString(responseXml);
+            const resultCode = parseInt(xpath.select('//CGI_Result/result[1]/text()', doc).toString(), 10);
+            if (resultCode == 0) {
+                const infraLedState = parseInt(xpath.select('//CGI_Result/infraLedState[1]/text()', doc).valueOf().toString(), 10);
+                
+                return [resultCode, infraLedState];
+            }
+            return [resultCode, null]
+        }
+
+        return null;
     }
 
     async turnOff() {
