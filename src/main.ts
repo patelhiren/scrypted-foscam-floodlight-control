@@ -10,6 +10,7 @@ const { deviceManager } = sdk;
 const FLOODLIGHT_IP_KEY: string = "floodlight-ip"
 const FLOODLIGHT_USER_KEY: string = "floodlight-username"
 const FLOODLIGHT_PASSWORD_KEY: string = "floodlight-password"
+const NIGHT_LIGHT_HDR_FIX_KEY: string = "night-light-hdr-fix"
 
 type whiteLightBrightnessData = [result: number, enable? :number, brightness?: number, lightinterval?: number];
 type hdrModeData = [result: number, mode?: number];
@@ -47,13 +48,20 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                 type: 'password',
                 value: this.storage.getItem(FLOODLIGHT_PASSWORD_KEY),
             },
+            {
+                title: 'Night Light HDR Fix',
+                key: NIGHT_LIGHT_HDR_FIX_KEY,
+                type: 'boolean',
+                value: this.storage.getItem(NIGHT_LIGHT_HDR_FIX_KEY),
+            },
         ];
     }
 
     putSetting(key: string, value: SettingValue): Promise<void> {
         if (key === FLOODLIGHT_IP_KEY
             || key === FLOODLIGHT_USER_KEY
-            || key === FLOODLIGHT_PASSWORD_KEY) {
+            || key === FLOODLIGHT_PASSWORD_KEY
+            || key === NIGHT_LIGHT_HDR_FIX_KEY) {
             this.storage.setItem(key, value.toString());
             this.updateState()
             this.onDeviceEvent(ScryptedInterface.Settings, key);
@@ -71,6 +79,10 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
 
     get password() {
         return this.storage.getItem(FLOODLIGHT_PASSWORD_KEY)
+    }
+
+    get nightLightHDRFix() {
+        return this.storage.getItem(NIGHT_LIGHT_HDR_FIX_KEY)
     }
 
     async updateState() {
@@ -117,7 +129,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                     }
                 }
             }
-        } while(true);
+        } while(this.nightLightHDRFix);
     }
 
     async getWhiteLightState(): Promise<whiteLightBrightnessData> {
