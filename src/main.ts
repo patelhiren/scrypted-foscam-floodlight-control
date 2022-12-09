@@ -34,30 +34,31 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                 key: FLOODLIGHT_IP_KEY,
                 type: 'string',
                 placeholder: '192.168.0.100:88',
-                value: this.storage.getItem(FLOODLIGHT_IP_KEY),
+                value: this.storage.getItem(FLOODLIGHT_IP_KEY) ?? "",
             },
             {
                 title: 'Username',
                 key: FLOODLIGHT_USER_KEY,
                 type: 'string',
-                value: this.storage.getItem(FLOODLIGHT_USER_KEY),
+                value: this.storage.getItem(FLOODLIGHT_USER_KEY) ?? "",
             },
             {
                 title: 'Password',
                 key: FLOODLIGHT_PASSWORD_KEY,
                 type: 'password',
-                value: this.storage.getItem(FLOODLIGHT_PASSWORD_KEY),
+                value: this.storage.getItem(FLOODLIGHT_PASSWORD_KEY) ?? "",
             },
             {
                 title: 'Night Light HDR Fix',
                 key: NIGHT_LIGHT_HDR_FIX_KEY,
                 type: 'boolean',
-                value: this.storage.getItem(NIGHT_LIGHT_HDR_FIX_KEY),
+                value: this.storage.getItem(NIGHT_LIGHT_HDR_FIX_KEY) ?? false,
             },
         ];
     }
 
     putSetting(key: string, value: SettingValue): Promise<void> {
+    
         if (key === FLOODLIGHT_IP_KEY
             || key === FLOODLIGHT_USER_KEY
             || key === FLOODLIGHT_PASSWORD_KEY
@@ -65,8 +66,11 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
             this.storage.setItem(key, value.toString());
             this.updateState()
             this.onDeviceEvent(ScryptedInterface.Settings, key);
-            return;
+        
         }
+        return new Promise<void>((resolve, reject) => {
+            resolve();
+        });
     }
 
     get ipAddress() {
@@ -95,8 +99,8 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
 
         const brightnessData = await this.getWhiteLightState();
         if (brightnessData && brightnessData[0] === 0) {
-            this.brightness = brightnessData[2]
-            this.lightinterval = brightnessData[3]
+            this.brightness = brightnessData[2] ?? 100;
+            this.lightinterval = brightnessData[3] ?? 60;
 
             this.on = (brightnessData[1] === 1);
         } else {
@@ -115,7 +119,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
             if (devState && devState[0] === 0) {
                 if (this.infraLedState != devState[1]) {
                     infraLedStateChanged = true;
-                    this.infraLedState = devState[1];
+                    this.infraLedState = devState[1] ?? 0;
                 }
                 // Work around a bug in the current Foscam Floodlight firmware where if the night mode toggles
                 // it looses hdr effect even though the option returns true, unless we call the setHdrMode again.
@@ -132,7 +136,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
         } while(this.nightLightHDRFix);
     }
 
-    async getWhiteLightState(): Promise<whiteLightBrightnessData> {
+    async getWhiteLightState(): Promise<whiteLightBrightnessData | null> {
 
         const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=getWhiteLightBrightness&usr=${this.userName}&pwd=${this.password}`;
         const responseXml = await axios.get(cmdUrl, {
@@ -154,7 +158,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
 
                 return [resultCode, enable, brightness, lightinterval];
             }
-            return [resultCode, null, null, null]
+            return [resultCode, 0, 100, 60]
         }
 
         return null;
@@ -181,7 +185,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
 
     }
 
-    async getHdrMode(): Promise<hdrModeData> {
+    async getHdrMode(): Promise<hdrModeData | null> {
 
         const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=getHdrMode&usr=${this.userName}&pwd=${this.password}`;
         const responseXml = await axios.get(cmdUrl, {
@@ -201,7 +205,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                 
                 return [resultCode, mode];
             }
-            return [resultCode, null]
+            return [resultCode, 0]
         }
 
         return null;
@@ -232,7 +236,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
         return false;
     }
 
-    async getDevState(): Promise<devStateData> {
+    async getDevState(): Promise<devStateData | null> {
 
         const cmdUrl = `http://${this.ipAddress}/cgi-bin/CGIProxy.fcgi?cmd=getDevState&usr=${this.userName}&pwd=${this.password}`;
         const responseXml = await axios.get(cmdUrl, {
@@ -252,7 +256,7 @@ class FoscamFloodlightDevice extends ScryptedDeviceBase implements Settings, OnO
                 
                 return [resultCode, infraLedState];
             }
-            return [resultCode, null]
+            return [resultCode, 0]
         }
 
         return null;
